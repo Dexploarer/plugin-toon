@@ -1,4 +1,4 @@
-# @hyperscape/plugin-toon
+# @dexploarer/plugin-toon
 
 TOON-encoded providers for token-efficient LLM context in ElizaOS.
 
@@ -19,7 +19,7 @@ items[2]{id,name}:
 ## Installation
 
 ```bash
-bun add @hyperscape/plugin-toon @toon-format/toon
+bun add @dexploarer/plugin-toon @toon-format/toon
 ```
 
 ## Usage
@@ -28,7 +28,7 @@ bun add @hyperscape/plugin-toon @toon-format/toon
 
 ```typescript
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
-import { toonPlugin } from '@hyperscape/plugin-toon';
+import { toonPlugin } from '@dexploarer/plugin-toon';
 import { hyperscapePlugin } from '@hyperscape/plugin-hyperscape';
 
 const agent = {
@@ -43,7 +43,7 @@ const agent = {
 ### Using Utilities Directly
 
 ```typescript
-import { encodeToon, formatForLLM, smartEncode } from '@hyperscape/plugin-toon';
+import { encodeToon, formatForLLM, smartEncode } from '@dexploarer/plugin-toon';
 
 // Encode data to TOON
 const toon = encodeToon({

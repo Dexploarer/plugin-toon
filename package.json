@@ -1,5 +1,5 @@
 {
-  "name": "@hyperscape/plugin-toon",
+  "name": "@dexploarer/plugin-toon",
   "version": "0.1.0",
   "description": "Drop-in replacement for @elizaos/plugin-bootstrap with TOON-encoded providers for token-efficient LLM context",
   "type": "module",
@@ -46,5 +46,12 @@
     "ai"
   ],
   "author": "Hyperscape",
-  "license": "MIT"
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dexploarer/plugin-toon.git"
+  }
 }

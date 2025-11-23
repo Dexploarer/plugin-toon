@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**@hyperscape/plugin-toon** is a drop-in replacement for `@elizaos/plugin-bootstrap` with TOON-encoded providers for token-efficient LLM context. TOON (Token-Oriented Object Notation) reduces token usage by 30-60% for structured data.
+**@dexploarer/plugin-toon** is a drop-in replacement for `@elizaos/plugin-bootstrap` with TOON-encoded providers for token-efficient LLM context. TOON (Token-Oriented Object Notation) reduces token usage by 30-60% for structured data.
 
 ## Commands
 
@@ -25,9 +25,9 @@ Replace bootstrap with toon in your character config:
 import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
 
 // After
-import { toonPlugin } from '@hyperscape/plugin-toon';
+import { toonPlugin } from '@dexploarer/plugin-toon';
 // Or for max compatibility:
-import { bootstrapPlugin } from '@hyperscape/plugin-toon';
+import { bootstrapPlugin } from '@dexploarer/plugin-toon';
 
 const agent = { plugins: [toonPlugin] };
 ```
@@ -37,7 +37,7 @@ In Hyperscape's `character-selection.ts`:
 plugins: [
   "@hyperscape/plugin-hyperscape",
   "@elizaos/plugin-sql",
-  "@hyperscape/plugin-toon",  // Replaces @elizaos/plugin-bootstrap
+  "@dexploarer/plugin-toon",  // Replaces @elizaos/plugin-bootstrap
 ],
 ```
 

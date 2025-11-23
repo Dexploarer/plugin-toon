@@ -1,5 +1,5 @@
 /**
- * @hyperscape/plugin-toon
+ * @dexploarer/plugin-toon
  *
  * Drop-in replacement for @elizaos/plugin-bootstrap with TOON-encoded providers
  * for token-efficient LLM context.
@@ -13,7 +13,7 @@
  * import { bootstrapPlugin } from '@elizaos/plugin-bootstrap';
  *
  * // With this:
- * import { toonPlugin } from '@hyperscape/plugin-toon';
+ * import { toonPlugin } from '@dexploarer/plugin-toon';
  *
  * const agent = {
  *   plugins: [toonPlugin], // Full bootstrap replacement with TOON optimization
