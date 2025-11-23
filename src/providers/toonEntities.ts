@@ -2,71 +2,74 @@
  * TOON-encoded Entities Provider
  *
  * Replaces bootstrap's entitiesProvider with token-efficient TOON format.
+ * Uses the same name "ENTITIES" to override bootstrap version.
  */
 
-import type { Provider, IAgentRuntime, Memory, State } from "@elizaos/core";
-import { formatForLLM } from "../utils/toon";
+import type { Entity, IAgentRuntime, Memory, Provider } from "@elizaos/core";
+import { addHeader, formatEntities, getEntityDetails } from "@elizaos/core";
+import { encodeToon } from "../utils/toon";
 
-interface EntitySummary {
-  id: string;
-  name: string;
-  type?: string;
-  role?: string;
+/**
+ * Format entities as TOON for token efficiency
+ */
+function formatEntitiesAsToon(entities: Entity[]): string {
+  if (!entities || entities.length === 0) return "";
+
+  // Transform to compact format for TOON
+  const compact = entities.map((entity) => ({
+    name: entity.names?.[0] || "Unknown",
+    id: (entity.id || "unknown").slice(0, 8), // Truncated UUID
+    role: (entity.metadata?.role as string) || "user",
+  }));
+
+  return encodeToon(compact, { delimiter: "\t" });
 }
 
+/**
+ * TOON-encoded entities provider
+ * Uses same name "ENTITIES" to replace bootstrap version
+ */
 export const toonEntitiesProvider: Provider = {
-  name: "toonEntities",
-  description: "TOON-encoded known entities for token efficiency",
+  name: "ENTITIES",
+  description: "TOON-encoded people in the current conversation for token efficiency",
   dynamic: true,
-  position: 12,
 
-  get: async (runtime: IAgentRuntime, message: Memory, state: State) => {
-    try {
-      // Get entities from runtime
-      const entities = await runtime.getEntities?.({
-        roomId: message.roomId,
-      });
+  get: async (runtime: IAgentRuntime, message: Memory) => {
+    const { roomId, entityId } = message;
 
-      if (!entities || entities.length === 0) {
-        return {
-          text: "",
-          values: { entityCount: 0 },
-          data: { entities: [] },
-        };
-      }
+    // Get entity details
+    const entitiesData = await getEntityDetails({ runtime, roomId });
 
-      // Transform to compact format
-      const entitySummaries: EntitySummary[] = entities.map((entity) => ({
-        id: String(entity.id).slice(0, 8), // Truncate UUID for context
-        name: entity.name || "Unknown",
-        ...(entity.type && { type: entity.type }),
-        ...(entity.metadata?.role && { role: entity.metadata.role as string }),
-      }));
+    // Format as TOON
+    const toonEntities = formatEntitiesAsToon(entitiesData ?? []);
 
-      // Format with TOON
-      const { text, itemCount } = formatForLLM(
-        "Known Entities",
-        entitySummaries,
-      );
+    // Also get original format for templates
+    const formattedEntities = formatEntities({ entities: entitiesData ?? [] });
 
-      return {
-        text,
-        values: {
-          entityCount: itemCount,
-          hasEntities: itemCount > 0,
-        },
-        data: {
-          entities: entitySummaries,
-          raw: entities,
-        },
-      };
-    } catch (error) {
-      console.error("[toonEntities] Error:", error);
-      return {
-        text: "",
-        values: { entityCount: 0, error: true },
-        data: { entities: [], error },
-      };
-    }
+    // Find sender name
+    const senderName = entitiesData?.find(
+      (entity: Entity) => entity.id === entityId
+    )?.names[0];
+
+    // Create formatted text with header
+    const entities =
+      toonEntities && toonEntities.length > 0
+        ? addHeader("# People in Room (TOON)", toonEntities)
+        : "";
+
+    const data = {
+      entitiesData,
+      senderName,
+    };
+
+    const values = {
+      entities: formattedEntities, // Keep original for templates
+    };
+
+    return {
+      data,
+      values,
+      text: entities,
+    };
   },
 };

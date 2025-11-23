@@ -1,0 +1,75 @@
+{
+  "$schema": "https://claude.ai/code/settings.schema.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "description": "Remind about ElizaOS patterns when editing providers",
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATH\" | grep -q 'src/providers'; then echo 'REMINDER: Providers should have name, description, dynamic, position, and get. See skills/toon-plugin.md'; fi"
+          }
+        ]
+      },
+      {
+        "description": "KISS reminder when creating new files",
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'KISS CHECK: Is this the simplest solution? Could it be a function instead of a class? Could it be inline instead of a new file?'"
+          }
+        ]
+      },
+      {
+        "description": "Research reminder for external library usage",
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE 'npm|npx|bunx'; then echo 'RESEARCH CHECK: Did you verify this package/command with Deepwiki first?'; fi"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "description": "Check for any type after TypeScript edits",
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_FILE_PATH\" | grep -qE '\\.tsx?$'; then grep -n ': any' \"$CLAUDE_FILE_PATH\" 2>/dev/null | head -5 && echo '(any types detected - consider using proper types)' || true; fi"
+          }
+        ]
+      }
+    ]
+  },
+  "agents": {
+    "elizaos-expert": {
+      "model": "sonnet",
+      "maxTurns": 10,
+      "tools": ["Read", "Grep", "Glob", "WebFetch"]
+    },
+    "plugin-auditor": {
+      "model": "sonnet",
+      "maxTurns": 20,
+      "tools": ["Read", "Grep", "Glob", "Task"]
+    },
+    "research-agent": {
+      "model": "sonnet",
+      "maxTurns": 15,
+      "tools": ["WebFetch", "mcp__deepwiki__ask_question", "Read", "Grep", "Glob"]
+    },
+    "test-builder": {
+      "model": "sonnet",
+      "maxTurns": 10,
+      "tools": ["Read", "Write", "Bash", "Grep", "Glob"]
+    }
+  },
+  "mcpServers": {},
+  "env": {
+    "PLUGIN_PATH": "src"
+  }
+}

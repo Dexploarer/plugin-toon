@@ -13,8 +13,7 @@ import type { ToonEncodeOptions, FormattedContext } from "../types";
 export function encodeToon(data: unknown, options?: ToonEncodeOptions): string {
   try {
     return encode(data, {
-      delimiter: options?.delimiter ?? ",",
-      lengthMarker: options?.lengthMarker,
+      delimiter: (options?.delimiter ?? ",") as "," | "\t" | "|",
     });
   } catch (error) {
     // Fallback to JSON if TOON encoding fails

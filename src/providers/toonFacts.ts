@@ -2,72 +2,112 @@
  * TOON-encoded Facts Provider
  *
  * Replaces bootstrap's factsProvider with token-efficient TOON format.
+ * Uses the same name "FACTS" to override bootstrap version.
  */
 
-import type { Provider, IAgentRuntime, Memory, State } from "@elizaos/core";
-import { formatForLLM } from "../utils/toon";
+import type { IAgentRuntime, Memory, Provider, State } from "@elizaos/core";
+import { ModelType, logger } from "@elizaos/core";
+import { encodeToon } from "../utils/toon";
 
-interface FactSummary {
-  fact: string;
-  source?: string;
-  confidence?: number;
+/**
+ * Format facts as TOON for token efficiency
+ */
+function formatFactsAsToon(facts: Memory[]): string {
+  if (!facts || facts.length === 0) return "";
+
+  // Transform to compact format for TOON
+  const compact = facts.reverse().map((fact) => ({
+    fact: (fact.content?.text as string) || "",
+    conf: Math.round(((fact.content?.confidence as number) || 1) * 100), // confidence as %
+  }));
+
+  return encodeToon(compact, { delimiter: "\t" });
 }
 
+/**
+ * TOON-encoded facts provider
+ * Uses same name "FACTS" to replace bootstrap version
+ */
 export const toonFactsProvider: Provider = {
-  name: "toonFacts",
-  description: "TOON-encoded known facts for token efficiency",
+  name: "FACTS",
+  description: "TOON-encoded key facts that the agent knows for token efficiency",
   dynamic: true,
-  position: 11,
 
-  get: async (runtime: IAgentRuntime, message: Memory, state: State) => {
+  get: async (runtime: IAgentRuntime, message: Memory, _state?: State) => {
     try {
-      // Get facts from runtime's fact memory
-      const facts = await runtime.getMemories({
+      // Get recent messages for context
+      const recentMessages = await runtime.getMemories({
+        tableName: "messages",
         roomId: message.roomId,
-        tableName: "facts",
-        count: 50,
+        count: 10,
+        unique: false,
       });
 
-      if (!facts || facts.length === 0) {
+      // Join last 5 messages for embedding search
+      const last5Messages = recentMessages
+        .slice(-5)
+        .map((m) => m.content.text)
+        .join("\n");
+
+      const embedding = await runtime.useModel(ModelType.TEXT_EMBEDDING, {
+        text: last5Messages,
+      });
+
+      // Search for relevant and recent facts in parallel
+      const [relevantFacts, recentFactsData] = await Promise.all([
+        runtime.searchMemories({
+          tableName: "facts",
+          embedding,
+          roomId: message.roomId,
+          worldId: message.worldId,
+          count: 6,
+          query: message.content.text,
+        }),
+        runtime.searchMemories({
+          embedding,
+          query: message.content.text,
+          tableName: "facts",
+          roomId: message.roomId,
+          entityId: message.entityId,
+          count: 6,
+        }),
+      ]);
+
+      // Deduplicate facts
+      const allFacts = [...relevantFacts, ...recentFactsData].filter(
+        (fact, index, self) => index === self.findIndex((t) => t.id === fact.id)
+      );
+
+      if (allFacts.length === 0) {
         return {
-          text: "",
-          values: { factCount: 0 },
-          data: { facts: [] },
+          values: { facts: "" },
+          data: { facts: allFacts },
+          text: "No facts available.",
         };
       }
 
-      // Transform to compact format
-      const factSummaries: FactSummary[] = facts.map((mem) => {
-        const content = mem.content as Record<string, unknown>;
-        return {
-          fact: (content.text as string) || String(content),
-          ...(content.source && { source: content.source as string }),
-          ...(content.confidence && {
-            confidence: content.confidence as number,
-          }),
-        };
-      });
+      // TOON-encode facts
+      const toonFacts = formatFactsAsToon(allFacts);
 
-      // Format with TOON
-      const { text, itemCount } = formatForLLM("Known Facts", factSummaries);
+      // Also provide original format for templates
+      const formattedFacts = allFacts
+        .reverse()
+        .map((fact) => fact.content.text)
+        .join("\n");
+
+      const text = `# Known Facts (TOON)\n${toonFacts}`;
 
       return {
+        values: { facts: formattedFacts },
+        data: { facts: allFacts },
         text,
-        values: {
-          factCount: itemCount,
-          hasFacts: itemCount > 0,
-        },
-        data: {
-          facts: factSummaries,
-          raw: facts,
-        },
       };
     } catch (error) {
-      console.error("[toonFacts] Error:", error);
+      logger.error({ error }, "Error in toonFactsProvider:");
       return {
-        text: "",
-        values: { factCount: 0, error: true },
-        data: { facts: [], error },
+        values: { facts: "" },
+        data: { facts: [] },
+        text: "Error retrieving facts.",
       };
     }
   },
