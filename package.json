@@ -1,0 +1,45 @@
+{
+  "name": "plugin-toon",
+  "version": "0.1.0",
+  "description": "TOON-encoded providers for token-efficient LLM context in ElizaOS",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "@elizaos/core": "^1.0.0",
+    "@toon-format/toon": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.21",
+    "typescript": "^5.8.3"
+  },
+  "peerDependencies": {
+    "@elizaos/core": "^1.0.0"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "keywords": [
+    "elizaos",
+    "plugin",
+    "toon",
+    "token-efficient",
+    "llm",
+    "ai"
+  ],
+  "author": "Hyperscape",
+  "license": "MIT"
+}
