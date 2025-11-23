@@ -21,7 +21,7 @@
  * ```
  */
 
-import type { Plugin } from "@elizaos/core";
+import { type Plugin, EventType } from "@elizaos/core";
 
 // Re-export everything from bootstrap for compatibility
 export * from "@elizaos/plugin-bootstrap";
@@ -67,6 +67,12 @@ import {
   toonActionsProvider,
 } from "./providers";
 
+// TOON embedding event handlers
+import {
+  handleRunEnded,
+  handleEmbeddingCompleted,
+} from "./events";
+
 // TOON utilities
 export {
   encodeToon,
@@ -91,11 +97,19 @@ export {
   toonActionsProvider,
 };
 
+// Export TOON embedding event handlers
+export {
+  handleRunEnded,
+  handleEmbeddingCompleted,
+} from "./events";
+export type { ToonEmbeddingConfig } from "./events";
+
 /**
  * TOON Plugin - Drop-in replacement for bootstrapPlugin
  *
  * Provides all bootstrap functionality with TOON-encoded providers
- * for token-efficient LLM context.
+ * for token-efficient LLM context, plus automatic embedding of
+ * TOON-encoded context for semantic search.
  *
  * TOON-encoded providers:
  * - RECENT_MESSAGES (position 100) - conversation history
@@ -103,13 +117,21 @@ export {
  * - ENTITIES (dynamic) - people in conversation
  * - ACTIONS (position -1) - available actions
  *
+ * Embedding events:
+ * - RUN_ENDED: Creates TOON context memory after message processing and queues embedding
+ *   (RUN_ENDED is reliably emitted by DefaultMessageService, unlike MESSAGE_RECEIVED
+ *    which is only emitted by platform plugins like Discord/Telegram)
+ * - EMBEDDING_GENERATION_COMPLETED: Logs TOON embedding metrics
+ *
+ * Requires plugin-gateway (or similar) to provide TEXT_EMBEDDING model handler.
+ *
  * All other bootstrap providers, actions, evaluators, and services
  * are included unchanged.
  */
 export const toonPlugin: Plugin = {
   name: "toon",
   description:
-    "Agent bootstrap with TOON-encoded providers for token-efficient LLM context",
+    "Agent bootstrap with TOON-encoded providers and context embeddings for token-efficient LLM context",
 
   actions: [
     replyAction,
@@ -153,8 +175,13 @@ export const toonPlugin: Plugin = {
   // Services imported dynamically to avoid circular deps
   services: [],
 
-  // Events will be handled by re-export
-  events: {},
+  // TOON embedding event handlers
+  // RUN_ENDED is emitted by DefaultMessageService after each message is processed
+  // This is more reliable than MESSAGE_RECEIVED which is only emitted by platform plugins
+  events: {
+    [EventType.RUN_ENDED]: [handleRunEnded],
+    [EventType.EMBEDDING_GENERATION_COMPLETED]: [handleEmbeddingCompleted],
+  },
 };
 
 // Also export as bootstrapPlugin for maximum compatibility

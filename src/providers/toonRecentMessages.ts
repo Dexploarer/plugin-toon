@@ -142,6 +142,18 @@ export const toonRecentMessagesProvider: Provider = {
         runtime.character.name
       );
 
+      // Calculate token savings estimate (rough: 4 chars = 1 token)
+      const toonTokensEst = Math.ceil(toonMessages.length / 4);
+      const jsonEquivalent = JSON.stringify(dialogueMessages.map(m => ({
+        sender: m.entityId,
+        text: m.content?.text,
+        time: m.createdAt
+      })));
+      const jsonTokensEst = Math.ceil(jsonEquivalent.length / 4);
+      const savings = jsonTokensEst > 0 ? Math.round((1 - toonTokensEst / jsonTokensEst) * 100) : 0;
+
+      logger.info(`[TOON] Encoded ${dialogueMessages.length} messages: ${toonMessages.length} chars (~${toonTokensEst} tokens) vs JSON ${jsonEquivalent.length} chars (~${jsonTokensEst} tokens) = ${savings}% savings`);
+
       // Format for bootstrap compatibility (still needed for some templates)
       const [formattedRecentMessages, formattedRecentPosts] = await Promise.all(
         [
