@@ -1,7 +1,7 @@
 {
   "name": "@dexploarer/plugin-toon",
   "version": "0.1.0",
-  "description": "Drop-in replacement for @elizaos/plugin-bootstrap with TOON-encoded providers for token-efficient LLM context",
+  "description": "Token-efficient TOON-encoded providers for ElizaOS - reduces LLM token usage by 30-60%",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -19,8 +19,6 @@
   },
   "dependencies": {
     "@elizaos/core": "^1.0.0",
-    "@elizaos/plugin-bootstrap": "^1.0.0",
-    "@elizaos/plugin-ollama": "^1.2.4",
     "@toon-format/toon": "^1.0.0"
   },
   "devDependencies": {
